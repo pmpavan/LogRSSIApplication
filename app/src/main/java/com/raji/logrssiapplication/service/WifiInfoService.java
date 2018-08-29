@@ -53,9 +53,7 @@ public class WifiInfoService extends Service {
         result.setSsid(wifiStateObject.getSsid());
         result.setBssid(wifiStateObject.getMasAddress());
         result.setRssiId(wifiStateObject.getRssiValue());
-        new Thread(() -> {
-            LogRssiApp.getWifiDb().daoAccess().insert(result);
-        }).start();
+        new Thread(() -> LogRssiApp.getWifiDb().daoAccess().insert(result)).start();
         EventBus.getDefault().post(wifiStateObject);
     }
 

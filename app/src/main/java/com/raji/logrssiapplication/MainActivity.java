@@ -25,6 +25,7 @@ import com.raji.logrssiapplication.model.WifiStateObject;
 import com.raji.logrssiapplication.service.WifiInfoService;
 import com.raji.logrssiapplication.utils.WifiUtils;
 
+import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
@@ -45,7 +46,6 @@ public class MainActivity extends AppCompatActivity {
 
     private boolean isServiceStarted = false;
 
-    public final double N = 2.32;
     private static final int SERVICE_RUNTIME = 2000;
 
     private List<NetWorkData> wifiList = new ArrayList<>();
@@ -54,8 +54,15 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        EventBus.getDefault().register(this);
         setupViews();
         setupControllers();
+    }
+
+    @Override
+    protected void onDestroy() {
+        EventBus.getDefault().unregister(this);
+        super.onDestroy();
     }
 
     private void setupViews() {
@@ -91,9 +98,9 @@ public class MainActivity extends AppCompatActivity {
 
     private void addToWifiList() {
         wifiList = new ArrayList<>();
+        wifiList.add(new NetWorkData("SSID", 55d, 3d, 8d));
         wifiList.add(new NetWorkData("P1", 45d, 6.5d, 0d));
-        wifiList.add(new NetWorkData("LightHouse", 55d, 3d, 8d));
-        wifiList.add(new NetWorkData("Redmi", 54d, 8d, 6d));
+        wifiList.add(new NetWorkData("sweet home", 54d, 8d, 6d));
     }
 
 
@@ -153,16 +160,16 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void export(String blockId, List<Distance> distanceList) {
-        String csv = (Environment.getExternalStorageDirectory().getAbsolutePath() + "/MyCsvFile.csv"); // Here csv file name is MyCsvFile.csv
+        String csv = (Environment.getExternalStorageDirectory().getAbsolutePath() + "/RssiTable.csv");
         CSVWriter writer = null;
         try {
             writer = new CSVWriter(new FileWriter(csv));
 
-            List<String[]> data = new ArrayList<String[]>();
+            List<String[]> data = new ArrayList<>();
             for (Distance distance : distanceList) {
                 data.add(new String[]{blockId, distance.bssid, String.valueOf(distance.getMinRssi()), String.valueOf(distance.getMaxRssi())});
             }
-            writer.writeAll(data); // data is adding to csv
+            writer.writeAll(data);
 
             writer.close();
         } catch (IOException e) {
@@ -212,7 +219,8 @@ public class MainActivity extends AppCompatActivity {
             permissions = {Manifest.permission.ACCESS_WIFI_STATE,
                     Manifest.permission.ACCESS_NETWORK_STATE,
                     Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.CHANGE_WIFI_STATE},
+                    Manifest.permission.CHANGE_WIFI_STATE,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE},
             rationaleMessage = "Custom rational message",
             permanentlyDeniedMessage = "Custom permanently denied message"
     )
@@ -240,7 +248,8 @@ public class MainActivity extends AppCompatActivity {
             permissions = {Manifest.permission.ACCESS_WIFI_STATE,
                     Manifest.permission.ACCESS_NETWORK_STATE,
                     Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.CHANGE_WIFI_STATE}
+                    Manifest.permission.CHANGE_WIFI_STATE,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE}
     )
     private void startWifiService(Intent intent) {
         startService(intent);
