@@ -29,6 +29,7 @@ import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -135,10 +136,49 @@ public class MainActivity extends AppCompatActivity {
 
     private void calculate() {
         LogRssiApp.getWifiDb().daoAccess().fetch()
+                .map(this::createAndWriteWifiResults)
                 .map(this::calculateDandABCandXY)
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(Schedulers.io())
                 .subscribe();
+    }
+
+    private List<Result> createAndWriteWifiResults(List<Result> results) {
+        exportResults(idTxt.getText().toString(), results);
+        return results;
+    }
+
+    private void exportResults(String blockId, List<Result> distanceList) {
+        String csv = (Environment.getExternalStorageDirectory().getAbsolutePath() + "/RssiTable.csv");
+        File myFile = new File(csv);
+        FileWriter fw = null;
+        try {
+            if (myFile.exists()) {
+                System.out.println("File is exists!");
+                fw = new FileWriter(csv, true);
+            } else {
+                System.out.println("File mot already exists.");
+                fw = new FileWriter(csv);
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        CSVWriter writer = null;
+        try {
+            writer = new CSVWriter(fw);
+
+            List<String[]> data = new ArrayList<>();
+            for (Result distance : distanceList) {
+                if (distance.getRssiId() != -127)
+                    data.add(new String[]{blockId, distance.bssid, String.valueOf(distance.getRssiId())});
+            }
+            writer.writeAll(data);
+
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private List<Distance> calculateDandABCandXY(List<Result> results) {
@@ -160,10 +200,24 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void export(String blockId, List<Distance> distanceList) {
-        String csv = (Environment.getExternalStorageDirectory().getAbsolutePath() + "/RssiTable.csv");
+        String csv = (Environment.getExternalStorageDirectory().getAbsolutePath() + "/AvgRssiTable.csv");
+        File myFile = new File(csv);
+        FileWriter fw = null;
+        try {
+            if (myFile.exists()) {
+                System.out.println("File is exists!");
+                fw = new FileWriter(csv, true);
+            } else {
+                System.out.println("File mot already exists.");
+                fw = new FileWriter(csv);
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         CSVWriter writer = null;
         try {
-            writer = new CSVWriter(new FileWriter(csv));
+            writer = new CSVWriter(fw);
 
             List<String[]> data = new ArrayList<>();
             for (Distance distance : distanceList) {
